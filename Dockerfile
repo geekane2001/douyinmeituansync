@@ -4,9 +4,10 @@ FROM python:3.10-slim
 # 设置工作目录
 WORKDIR /app
 
-# 安装 Node.js (用于运行 sign_generator.js)
+# 安装 Node.js (用于运行 sign_generator.js) 和基础支持库
 RUN apt-get update && apt-get install -y \
     curl \
+    libtk8.6 \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean \
