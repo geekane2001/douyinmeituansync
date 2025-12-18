@@ -1,0 +1,29 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Log in to Docker Hub
+      run: echo "dckr_pat_UgiPQPX67P793T9FGpG1KKOu7Jg" | docker login -u "geekane2025" --password-stdin
+
+    - name: Build the Docker image
+      run: |
+        TAG=$(date +%s)
+        IMAGE_NAME=geekane2025/douyin-sync-tool
+        docker build . --file Dockerfile --tag $IMAGE_NAME:$TAG --tag $IMAGE_NAME:latest
+
+    - name: Push the Docker image
+      run: |
+        IMAGE_NAME=geekane2025/douyin-sync-tool
+        docker push --all-tags $IMAGE_NAME
