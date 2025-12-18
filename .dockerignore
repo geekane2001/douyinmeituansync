@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.env
+.vscode/
+.git/
+.gitignore
+update_products_log.txt
+*.log
+mtgsig_result.json
+tempCodeRunnerFile.py
+商品完整内容.json
+cookie.txt

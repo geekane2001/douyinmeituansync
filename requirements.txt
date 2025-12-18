@@ -1,0 +1,23 @@
+# 抖音团购智能同步工具 - 依赖包列表
+
+# 核心依赖
+requests>=2.31.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# AI/LLM
+openai>=1.0.0
+
+# 图片处理
+Pillow>=10.0.0
+boto3>=1.28.0
+
+# 网页解析
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# GUI
+gradio>=4.0.0
+
+# 工具库
+python-dateutil>=2.8.2

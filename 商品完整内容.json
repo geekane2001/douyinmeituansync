@@ -1,0 +1,97 @@
+{
+    "BaseResp": {
+      "StatusCode": 0,
+      "StatusMessage": ""
+    },
+    "data": {
+      "description": "",
+      "error_code": 0,
+      "product_onlines": [
+        {
+          "commission_info": {
+            "platform_take_rate": 700
+          },
+          "online_status": 2,
+          "product": {
+            "account_name": "成都竞潮玩网络科技有限公司",
+            "attr_key_value_map": {
+              "DateRule": "{\"unavailable_date\":{\"date_list\":[],\"weekday_list\":[],\"not_available_on_holidays\":false}}",
+              "Description": "[\"适用区域: 大厅/HKC六人包\"]",
+              "Images": "[\"https://sf1-dycdn-tos.pstatp.com/obj/tos-cn-i-hf2m9xxmck/56bbf9b27aa54e39b39bcbc7bdd60b76\",\"https://sf1-dycdn-tos.pstatp.com/obj/tos-cn-i-hf2m9xxmck/18d1798cef974e8a850e57546bece9b3\"]",
+              "Notification": "[{\"title\":\"使用须知\",\"content\":\"限定区域及时段内最长可达9小时上网，无论几点开始本包时段都在次日08:00结束\\n余时不转不留，禁止未成年人使用，限本人使用\\n本券需已办理会员方可使用\\n无须预约，高峰期可能需要等位\"},{\"title\":\"限购说明\",\"content\":\"限已有会员/不限次\"},{\"title\":\"有效期\",\"content\":\"购买后7天内有效\"}]",
+              "PostPurchaseDay": "7",
+              "RefundPolicy": "2",
+              "SupplierExtIdList": "[]",
+              "appointment": "{\"need_appointment\":false}",
+              "auto_renew": "false",
+              "can_no_use_date": "{\"enable\":false}",
+              "comsumption_threshold": "{\"enable\":false,\"description\":\"\"}",
+              "customer_reserved_info": "{\"allow\":false}",
+              "description_rich_text": "[{\"note_type\":1,\"content\":\"\"}]",
+              "environment_image_list": "[]",
+              "groupon_supplementary_instruction": "限定区域及时段内最长可达6小时上网，无论几点开始本包时段都在15：00结束\n余时不转不留，禁止未成年人使用，限本人使用\n本券需已办理会员方可使用\n无须预约，高峰期可能需要等位\n",
+              "image_1v1_list": "[{\"url\":\"https://p26-sign.douyinpic.com/obj/tos-cn-i-hf2m9xxmck/7e5a7c180f8844a59855c80401b617df?x-expires=1760968800\\u0026x-signature=MP2lcO8oGenabZ2RNHZX32sDJB4%3D\\u0026from=709197913\"},{\"url\":\"https://p26-sign.douyinpic.com/obj/tos-cn-i-hf2m9xxmck/56bbf9b27aa54e39b39bcbc7bdd60b76?x-expires=1760968800\\u0026x-signature=3GgYZhq4OqQCjeUj5TxEc94qMls%3D\\u0026from=709197913\"}]",
+              "image_list": "[{\"url\":\"https://p11-sign.douyinpic.com/obj/tos-cn-i-hf2m9xxmck/56bbf9b27aa54e39b39bcbc7bdd60b76?x-expires=1760968800\\u0026x-signature=1PzWnFfyVzrbqDI5nyakXmfd4Gs%3D\\u0026from=709197913\"},{\"url\":\"https://p3-sign.douyinpic.com/obj/tos-cn-i-hf2m9xxmck/18d1798cef974e8a850e57546bece9b3?x-expires=1760968800\\u0026x-signature=BpQyeuzHFoHnGThMzWKqTbG%2Fr38%3D\\u0026from=709197913\"}]",
+              "limit_use_rule": "{\"is_limit_use\":true,\"use_num_per_consume\":1}",
+              "real_name_info": "{\"enable\":false,\"scene\":0}",
+              "show_channel": "1",
+              "superimposed_discounts": "false",
+              "use_date": "{\"use_date_type\":2,\"day_duration\":15}",
+              "use_time": "{\"use_time_type\":1}",
+              "user_num_limit": "{\"enable_limit\":true,\"limit_num\":1}"
+            },
+            "biz_line": 1,
+            "category_full_name": "休闲娱乐·传统娱乐·网吧/网咖",
+            "category_id": 4007001,
+            "creator_account_id": 7241078611527075855,
+            "extra": "{\"TestFlag\":false,\"TestInfo\":{},\"boost_strategy\":\"{}\",\"client_key\":\"awbeykzyos7kbidv\",\"create_source\":\"299467\",\"entry_psm\":\"life.goods.openapi\",\"goods_partner_type\":\"KA_SELF\",\"govern_rule_downgrade\":false,\"hermes_template_config_id\":\"\",\"hermes_template_version\":\"\",\"is_life_clue\":false,\"min_manage_account_id\":7241078611527075855,\"offline_info\":{\"OfflineReason\":\"商品售卖过期下线\",\"OfflineVersion\":1760944853936,\"OperateRole\":\"SYSTEM\"},\"online_seat_selection_template\":false,\"operate_account_id\":7241078611527075855,\"operate_dept_id\":7419137914380290057,\"opt_app_key\":10148,\"opt_life_account_id\":7241078611527075855,\"opt_user_id\":1286874604511870,\"poi_count\":1,\"poi_set_id\":\"7552823194562873383\",\"pre_online_status\":\"ONLINE\",\"saiyan_source\":true,\"service_item_template_snapshot_ids\":[],\"sku_count\":1,\"substitution_operation_reason\":\"\",\"template_id\":7205102940796094520,\"template_snapshot_ids\":[],\"ticket_type_matched_flag\":\"0\",\"tpl_publish_src\":\"OneStopV2\"}",
+            "owner_account_id": 7241078611527075855,
+            "pois": [
+              {
+                "poi_id": "6733503905520420872"
+              }
+            ],
+            "product_id": "1838672155482154",
+            "product_name": "【夜市】大厅/HKC六人包23点-08点",
+            "product_sub_type": 0,
+            "product_type": 1,
+            "sold_end_time": 1792476145,
+            "sold_start_time": 1753494763,
+            "version": 1760944853936
+          },
+          "sku": {
+            "actual_amount": 1550,
+            "attr_key_value_map": {
+              "code_source_type": "1",
+              "commodity": "[{\"group_name\":\"包时\",\"total_count\":1,\"option_count\":1,\"item_list\":[{\"name\":\"包时\",\"price\":9800,\"count\":1,\"unit\":\"份\",\"item_id\":\"7399527905237256232\",\"attr_list\":[{\"assembly_type\":7,\"attr_key\":\"applicable_location\",\"attr_key_name\":\"适用位置\",\"attr_value\":\"{\\\"key\\\":10006,\\\"value\\\":\\\"360Hz单人包\\\",\\\"is_custom\\\":true}\",\"is_multi\":false},{\"assembly_type\":7,\"attr_key\":\"environmental_facility\",\"attr_key_name\":\"环境设施\",\"attr_value\":\"{\\\"value\\\":\\\"\\\"}\",\"is_multi\":true},{\"assembly_type\":3,\"attr_key\":\"include_meal\",\"attr_key_name\":\"含饮品/小食\",\"attr_value\":\"false\",\"is_multi\":false},{\"assembly_type\":7,\"attr_key\":\"item_optical_item_classify\",\"attr_key_name\":\"项目分类\",\"attr_value\":\"{\\\"key\\\":2,\\\"value\\\":\\\"上网包时类服务\\\"}\",\"is_multi\":false},{\"assembly_type\":7,\"attr_key\":\"item_suitable_group\",\"attr_key_name\":\"适用人群\",\"attr_value\":\"{\\\"key\\\":1,\\\"value\\\":\\\"不限制\\\"}\",\"is_multi\":false},{\"assembly_type\":1005,\"attr_key\":\"total_service_time\",\"attr_key_name\":\"总服务时长\",\"attr_value\":\"{\\\"time\\\":5,\\\"time_type\\\":2}\",\"is_multi\":false}],\"template_snapshot_id\":7542361010204887091}]}]",
+              "is_origin_amount_edited": "false",
+              "limit_buy_rule": "{\"enable_limit\":true,\"rule_list\":[{\"subject_type\":1,\"range_type\":3,\"limit_num\":1,\"unit\":\"份\"}]}",
+              "limit_rule": "{\"is_limit\":true,\"total_buy_num\":1}",
+              "order_limit_rule": "{\"is_limit\":false}",
+              "settle_type": "3",
+              "use_type": "1"
+            },
+            "create_time": 1760944853,
+            "origin_amount": 9800,
+            "sku_id": "1838672155482154",
+            "sku_name": "【夜市】大厅/HKC六人包23点-08点",
+            "status": 1,
+            "stock": {
+              "limit_type": 2,
+              "stock_qty": 10000000000
+            },
+            "update_time": 1760944873
+          },
+          "skus": []
+        }
+      ]
+    },
+    "extra": {
+      "error_code": 0,
+      "description": "",
+      "sub_error_code": 0,
+      "sub_description": "",
+      "logid": "20251020160040CEF5CC8DBB769BD16AEC",
+      "now": 1760947240
+    }
+  }
