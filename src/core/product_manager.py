@@ -47,9 +47,7 @@ def operate_douyin_product(access_token, product_id, log_func, offline=True):
         log_func(f"商品 {product_id} {action_text}时发生意外错误: {e}")
         return False, str(e)
 
-
 # ========== 以下函数从原文件迁移 ==========
-
 
 def _get_product_template_web(session, product_id, root_life_account_id, log_func):
     """从网页端获取商品模板"""
