@@ -12,7 +12,8 @@ from src.config import (
     DOUYIN_ACCOUNT_ID,
     DOUYIN_PRODUCT_SAVE_URL,
     DOUYIN_PRODUCT_OPERATE_URL,
-    DOUYIN_ROOT_LIFE_ACCOUNT_ID
+    DOUYIN_ROOT_LIFE_ACCOUNT_ID,
+    DOUYIN_POI_SET_ID
 )
 from src.api.douyin_api import get_douyin_product_details
 from src.core.image_processor import center_crop_image, upload_to_r2
@@ -104,6 +105,12 @@ def _build_web_product_payload_from_template(product_detail_template, new_data, 
     
     # 更新售价和原价
     actual_amount = int(new_data["售价"] * 100)  # 转换为分
+    
+    # [规则] 抖音最低价限制5元
+    if actual_amount < 500:
+        log_func(f"⚠️ 检测到售价 ({actual_amount/100}元) 低于平台最低限制 5元，已自动上调至 5元。")
+        actual_amount = 500
+
     origin_amount = int(new_data["原价"] * 100)  # 转换为分
     comp_map['actualAmount'] = str(actual_amount)
     comp_map['originAmount'] = str(origin_amount)
@@ -220,7 +227,7 @@ def _build_web_product_payload_from_template(product_detail_template, new_data, 
         log_func(f"详细错误: {traceback.format_exc()}")
     
     # 强制使用固定的 poi_set_id
-    fixed_poi_set_id = "7585446102637381686"
+    fixed_poi_set_id = DOUYIN_POI_SET_ID
     product_object['extra_map'] = {
         "poi_set_id": fixed_poi_set_id,
         "poi_check_result": "",
@@ -491,6 +498,12 @@ def update_douyin_product(access_token, product_id, new_data, log_func, mode="�
 
         # 2. 准备价格
         actual_amount_fen = int(float(new_data["售价"]) * 100)
+
+        # [规则] 抖音最低价限制5元
+        if actual_amount_fen < 500:
+            log_func(f"⚠️ 检测到售价 ({actual_amount_fen/100}元) 低于平台最低限制 5元，已自动上调至 5元。")
+            actual_amount_fen = 500
+
         origin_amount_fen = int(float(new_data["原价"]) * 100)
         
         log_func(f"目标方案：标题={new_data['团购标题']}, 售价={actual_amount_fen}分, 原价={origin_amount_fen}分")
