@@ -220,7 +220,7 @@ def _build_web_product_payload_from_template(product_detail_template, new_data, 
         log_func(f"详细错误: {traceback.format_exc()}")
     
     # 强制使用固定的 poi_set_id
-    fixed_poi_set_id = "7585041807923316776"
+    fixed_poi_set_id = "7585446102637381686"
     product_object['extra_map'] = {
         "poi_set_id": fixed_poi_set_id,
         "poi_check_result": "",
@@ -471,127 +471,141 @@ def create_product_via_web(cookie, csrf_token, root_life_account_id, template_pr
     log_func(f"[SUCCESS] 商品 '{new_data['团购标题']}' 重创完成！Product ID: {new_product_id}")
     return new_product_id, None
 
-
 def update_douyin_product(access_token, product_id, new_data, log_func, mode="修改", image_dir=None, target_poi_id=None):
     """
-    修改抖音商品信息 (基于开放平台 API)
-    支持修改：标题、售价、原价、可用区域、限购、有效期、团单备注
+    修改抖音商品函数 (增加必填参数补丁: use_type, RefundPolicy 等)
     """
     log_func(f"========== 开始 {mode} 商品 ID: {product_id} ==========")
 
-    # 1. 获取商品当前的完整详情作为模板
+    # 1. 获取详情
     full_product_data = get_douyin_product_details(access_token, product_id, log_func)
     if not full_product_data:
-        return False, "获取商品详情失败，无法修改"
+        return False, "获取商品详情失败"
 
     try:
         product_to_save = full_product_data.get('product')
-        # 抖音 API 返回的可能是 skus 列表，也可能是单个 sku 对象
         sku_to_save = full_product_data.get('skus', [{}])[0] if full_product_data.get('skus') else full_product_data.get('sku')
         
         if not product_to_save or not sku_to_save:
-            return False, "商品数据结构不完整"
+            return False, "模板数据结构不完整"
 
-        log_func(f"正在构建修改后的数据载荷...")
+        # 2. 准备价格
+        actual_amount_fen = int(float(new_data["售价"]) * 100)
+        origin_amount_fen = int(float(new_data["原价"]) * 100)
+        
+        log_func(f"目标方案：标题={new_data['团购标题']}, 售价={actual_amount_fen}分, 原价={origin_amount_fen}分")
 
-        # 2. 更新基础信息：标题
+        # 3. 基础字段更新
         product_to_save["product_name"] = new_data["团购标题"]
         sku_to_save["sku_name"] = new_data["团购标题"]
+        sku_to_save["actual_amount"] = actual_amount_fen
+        sku_to_save["origin_amount"] = origin_amount_fen
 
-        # 3. 更新价格 (单位：分)
-        actual_amount = int(float(new_data["售价"]) * 100)
-        sku_to_save["actual_amount"] = actual_amount
-        
-        if new_data.get("原价"):
-            origin_amount = int(float(new_data["原价"]) * 100)
-            sku_to_save["origin_amount"] = origin_amount
-        else:
-            # 如果没传原价，至少保证原价不低于售价
-            origin_amount = sku_to_save.get("origin_amount", actual_amount)
-            sku_to_save["origin_amount"] = max(origin_amount, actual_amount)
-
-        # 4. 更新属性映射 (Notification: 须知/限购/有效期)
+        # 4. 【关键修复】补充必填字段补丁
         if "attr_key_value_map" not in product_to_save:
             product_to_save["attr_key_value_map"] = {}
         
-        notification_content = [
+        p_attr = product_to_save["attr_key_value_map"]
+        
+        # A. 退款政策 (必填): 1-不支持退款, 2-随心退, 4-过期自动退
+        if "RefundPolicy" not in p_attr:
+            p_attr["RefundPolicy"] = "2" 
+            log_func("补丁: 已添加缺失的 RefundPolicy (随心退)")
+
+        # B. 须知 (Notification)
+        notification = [
             {"title": "使用须知", "content": new_data.get('团单备注', '请按照商家规定使用')},
             {"title": "限购说明", "content": new_data.get('限购', '无限制')},
             {"title": "有效期", "content": f"购买后{new_data.get('有效期', '30')}日内有效"}
         ]
-        product_to_save['attr_key_value_map']['Notification'] = json.dumps(notification_content, ensure_ascii=False)
+        p_attr['Notification'] = json.dumps(notification, ensure_ascii=False)
 
-        # 5. 更新描述 (Description: 可用区域)
-        area_text = new_data.get('可用区域', '全场通用')
-        product_to_save['attr_key_value_map']['Description'] = json.dumps([f"适用区域: {area_text}"], ensure_ascii=False)
+        # C. 描述 (Description)
+        p_attr['Description'] = json.dumps([f"适用区域: {new_data.get('可用区域', '全场通用')}"], ensure_ascii=False)
 
-        # 6. 完善必要字段 (防止 API 报错)
-        if "RefundPolicy" not in product_to_save["attr_key_value_map"]:
-            product_to_save["attr_key_value_map"]["RefundPolicy"] = "2" # 2 通常代表支持退款
-        
+        # D. 【本次报错核心】核销方式 (use_type): 1-到店核销, 2-在线预约
         if "attr_key_value_map" not in sku_to_save:
             sku_to_save["attr_key_value_map"] = {}
-        if "use_type" not in sku_to_save["attr_key_value_map"]:
-            sku_to_save["attr_key_value_map"]["use_type"] = "1" # 1 代表到店核销
+        
+        s_attr = sku_to_save["attr_key_value_map"]
+        if "use_type" not in s_attr:
+            s_attr["use_type"] = "1"
+            log_func("补丁: 已添加缺失的 use_type (到店核销)")
 
-        # 7. 动态更新 POI ID (如果提供了 target_poi_id)
-        poi_ids_for_saving = []
-        if target_poi_id:
-            product_to_save['pois'] = [{"poi_id": str(target_poi_id)}]
-            # 更新 extra 字段中的 poi_set_id
-            extra_obj = json.loads(product_to_save.get("extra", "{}"))
-            extra_obj['poi_set_id'] = str(target_poi_id)
-            product_to_save['extra'] = json.dumps(extra_obj)
-            poi_ids_for_saving = [str(target_poi_id)]
-            log_func(f"已将目标门店设置为: {target_poi_id}")
-        else:
-            # 如果没提供，从原数据中提取现有的 POI
-            extra_obj = json.loads(product_to_save.get("extra", "{}"))
-            poi_set_id = extra_obj.get("poi_set_id")
-            if poi_set_id:
-                poi_ids_for_saving = [str(poi_set_id)]
-
-        # 8. 同步更新商品内部的商品清单 (Commodity) 中的价格
-        # 抖音某些类目要求内部 item 的 price 总和与原价一致
-        if 'commodity' in sku_to_save.get('attr_key_value_map', {}):
+        # 5. 更新 Commodity (修正价格类型与数值)
+        if 'commodity' in s_attr:
             try:
-                commodity_obj = json.loads(sku_to_save['attr_key_value_map']['commodity'])
-                if commodity_obj and len(commodity_obj) > 0:
-                    for group in commodity_obj:
-                        if 'item_list' in group:
-                            for item in group['item_list']:
-                                # 更新内部价格为新的原价
-                                item['price'] = str(sku_to_save["origin_amount"])
-                    sku_to_save['attr_key_value_map']['commodity'] = json.dumps(commodity_obj, ensure_ascii=False)
-                    log_func("已同步更新商品清单(Commodity)内部价格")
+                commodity_obj = json.loads(s_attr['commodity'])
+                items = []
+                for group in commodity_obj:
+                    if 'item_list' in group:
+                        for item in group['item_list']:
+                            items.append(item)
+                
+                if items:
+                    for i, item in enumerate(items):
+                        original_val = item.get('price', 0)
+                        # 第一个项目承担总价，其他归零，以通过 sum == origin_amount 校验
+                        current_val = origin_amount_fen if i == 0 else 0
+                        # 智能适配原有的数据类型
+                        if isinstance(original_val, str):
+                            item['price'] = str(current_val)
+                        else:
+                            item['price'] = int(current_val)
+                    s_attr['commodity'] = json.dumps(commodity_obj, ensure_ascii=False)
+                    log_func("Commodity 价格与类型修正完成")
             except Exception as e:
-                log_func(f"[Warning] 更新商品清单价格时出错(非致命): {e}")
+                log_func(f"[Warning] Commodity 修正失败: {e}")
 
-        # 9. 构建最终请求载荷
+        # 6. POI 设置
+        import os
+        poi_id_final = str(target_poi_id) if target_poi_id else str(os.getenv('DOUYIN_POI_ID', ''))
+        
+        if poi_id_final and poi_id_final != 'None' and poi_id_final != '':
+            product_to_save['pois'] = [{"poi_id": poi_id_final}]
+            extra_obj = json.loads(product_to_save.get("extra", "{}"))
+            extra_obj['poi_set_id'] = poi_id_final
+            product_to_save['extra'] = json.dumps(extra_obj)
+            poi_ids_list = [poi_id_final]
+        else:
+            # 如果没有指定，保持详情中的 poi_set_id 
+            curr_extra = json.loads(product_to_save.get("extra", "{}"))
+            p_id = str(curr_extra.get('poi_set_id', ''))
+            poi_ids_list = [p_id] if p_id else []
+
+        # 7. 构建载荷
         save_payload = {
             "account_id": str(DOUYIN_ACCOUNT_ID),
             "product": product_to_save,
             "sku": sku_to_save,
-            "poi_ids": poi_ids_for_saving,
-            "supplier_ext_ids": poi_ids_for_saving
+            "poi_ids": poi_ids_list,
+            "supplier_ext_ids": poi_ids_list
         }
 
-        # 10. 发送保存请求
+        # --- 打印请求全量日志 ---
+        log_func("-" * 20 + " [DEBUG: FINAL REQUEST PAYLOAD] " + "-" * 20)
+        log_func(json.dumps(save_payload, ensure_ascii=False, indent=2))
+        log_func("-" * 70)
+
+        # 8. 执行请求
         headers = {"Content-Type": "application/json", "access-token": access_token}
-        response = requests.post(DOUYIN_PRODUCT_SAVE_URL, headers=headers, json=save_payload, timeout=20)
+        response = requests.post(DOUYIN_PRODUCT_SAVE_URL, headers=headers, json=save_payload, timeout=25)
         response.raise_for_status()
         response_data = response.json()
+
+        # --- 打印响应全量日志 ---
+        log_func("-" * 20 + " [DEBUG: FULL API RESPONSE] " + "-" * 20)
+        log_func(json.dumps(response_data, ensure_ascii=False, indent=2))
+        log_func("-" * 70)
 
         if response_data.get('data', {}).get('error_code') == 0:
             log_func(f"[SUCCESS] 商品 '{new_data['团购标题']}' 修改成功!")
             return True, ""
         else:
-            reason = response_data.get('data', {}).get('description', 'API返回未知错误')
-            log_func(f"[FAILURE] 商品修改失败: {reason}")
-            # 调试用：打印出完整的错误响应
-            # log_func(f"Debug Info: {json.dumps(response_data, ensure_ascii=False)}")
+            reason = response_data.get('data', {}).get('description', '未知错误')
+            log_func(f"[FAILURE] 修改失败原因: {reason}")
             return False, reason
 
     except Exception as e:
-        log_func(f"处理商品修改时发生意外错误: {e}\n{traceback.format_exc()}")
+        log_func(f"修改过程中发生异常:\n{traceback.format_exc()}")
         return False, str(e)
