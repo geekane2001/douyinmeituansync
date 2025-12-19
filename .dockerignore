@@ -11,7 +11,3 @@ env/
 .gitignore
 update_products_log.txt
 *.log
-mtgsig_result.json
-tempCodeRunnerFile.py
-商品完整内容.json
-cookie.txt
