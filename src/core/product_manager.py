@@ -47,7 +47,9 @@ def operate_douyin_product(access_token, product_id, log_func, offline=True):
         log_func(f"商品 {product_id} {action_text}时发生意外错误: {e}")
         return False, str(e)
 
+
 # ========== 以下函数从原文件迁移 ==========
+
 
 def _get_product_template_web(session, product_id, root_life_account_id, log_func):
     """从网页端获取商品模板"""
@@ -378,10 +380,96 @@ def create_product_via_web(cookie, csrf_token, root_life_account_id, template_pr
     # 如果 target_poi_id 不同，我们需要调用 operate_douyin_product 吗？不，那个是上下架
     # 如果要修改商品信息（包括POI），应该用 update_douyin_product
     
-    # 暂时只返回成功，不进行后续的POI修改，因为payload里已经指定了POI
-    # 如果需要动态指定POI，应该修改 _build_web_product_payload_from_template 接受 target_poi_id
+    log_func(f"✅ 商品创建成功！新商品ID: {new_product_id}")
     
-    return new_product_id, "创建成功"
+    # 步骤4: 等待商品审核通过
+    log_func(f"--- 步骤4: 等待商品审核通过 ---")
+    approval_success, full_product_data = _wait_for_product_approval(access_token, new_product_id, log_func, max_wait_time=60, check_interval=5)
+    
+    if not approval_success or not full_product_data:
+        log_func("[Warning] 商品可能仍在审核中，无法立即修改POI ID。")
+        log_func("[Info] 商品已创建成功，但POI ID为固定值。请稍后手动修改或等待审核通过后重新运行。")
+        return new_product_id, "创建成功，但POI修改需等待审核"
+    
+    # 步骤5: 使用开放平台API修改POI ID到目标门店
+    log_func(f"--- 步骤5: 修改POI ID到目标门店 (POI ID: {target_poi_id}) ---")
+    
+    try:
+        product_to_save = full_product_data.get('product')
+        sku_to_save = full_product_data.get('skus', [{}])[0] if full_product_data.get('skus') else full_product_data.get('sku')
+        
+        if not product_to_save or not sku_to_save:
+            log_func("[Warning] 商品数据不完整，POI ID可能未更新。")
+            return new_product_id, "创建成功，数据不完整无法更新POI"
+        
+        # 更新POI ID到目标门店
+        product_to_save['pois'] = [{"poi_id": str(target_poi_id)}]
+        extra_obj = json.loads(product_to_save.get("extra", "{}"))
+        extra_obj['poi_set_id'] = str(target_poi_id)
+        product_to_save['extra'] = json.dumps(extra_obj)
+        
+        # 确保所有必填字段存在
+        log_func("正在检查并补充必填字段...")
+        
+        # 1. product 必填字段
+        if "attr_key_value_map" not in product_to_save:
+            product_to_save["attr_key_value_map"] = {}
+        
+        # RefundPolicy（退款政策）
+        if "RefundPolicy" not in product_to_save["attr_key_value_map"]:
+            product_to_save["attr_key_value_map"]["RefundPolicy"] = "2"
+            log_func("已添加缺失的 RefundPolicy 字段")
+        
+        # Notification（使用须知）
+        if "Notification" not in product_to_save["attr_key_value_map"]:
+            notification_content = [
+                {"title": "使用须知", "content": "请按照商家规定使用"},
+                {"title": "限购说明", "content": "每人限购1份"},
+                {"title": "有效期", "content": "购买后30日内有效"}
+            ]
+            product_to_save["attr_key_value_map"]["Notification"] = json.dumps(notification_content, ensure_ascii=False)
+            log_func("已添加缺失的 Notification 字段")
+        
+        # Description（商品描述）
+        if "Description" not in product_to_save["attr_key_value_map"]:
+            product_to_save["attr_key_value_map"]["Description"] = json.dumps(["适用区域: 全场通用"], ensure_ascii=False)
+            log_func("已添加缺失的 Description 字段")
+        
+        # 2. sku 必填字段
+        if "attr_key_value_map" not in sku_to_save:
+            sku_to_save["attr_key_value_map"] = {}
+        
+        # use_type（使用类型）
+        if "use_type" not in sku_to_save.get("attr_key_value_map", {}):
+            sku_to_save["attr_key_value_map"]["use_type"] = "1"
+            log_func("已添加缺失的 use_type 字段")
+        
+        log_func(f"正在将POI ID从固定值更新为目标门店: {target_poi_id}")
+        
+        # 构建保存请求
+        save_payload = {
+            "account_id": str(DOUYIN_ACCOUNT_ID),
+            "product": product_to_save,
+            "sku": sku_to_save,
+            "poi_ids": [str(target_poi_id)],
+            "supplier_ext_ids": [str(target_poi_id)]
+        }
+        
+        headers = {"Content-Type": "application/json", "access-token": access_token}
+        response = requests.post(DOUYIN_PRODUCT_SAVE_URL, headers=headers, json=save_payload, timeout=20)
+        response.raise_for_status()
+        response_data = response.json()
+        
+        if response_data.get('data', {}).get('error_code') == 0:
+            log_func(f"✅ POI ID已成功更新到目标门店！")
+        else:
+            log_func(f"[Warning] POI ID更新失败: {response_data.get('data', {}).get('description', '未知错误')}")
+    
+    except Exception as e:
+        log_func(f"[Warning] 更新POI ID时出错: {e}")
+    
+    log_func(f"[SUCCESS] 商品 '{new_data['团购标题']}' 重创完成！Product ID: {new_product_id}")
+    return new_product_id, None
 
 
 def update_douyin_product(access_token, product_id, new_data, log_func, mode="修改", image_dir=None, target_poi_id=None):
