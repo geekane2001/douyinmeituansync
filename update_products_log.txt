@@ -10193,3 +10193,8 @@ requests.exceptions.HTTPError: 404 Client Error: Not Found for url: https://i.me
 2025-12-20 10:13:31,157 - INFO - HTTP Request: GET http://localhost:7860/gradio_api/startup-events "HTTP/1.1 200 OK"
 2025-12-20 10:13:33,194 - INFO - HTTP Request: HEAD http://localhost:7860/ "HTTP/1.1 200 OK"
 2025-12-20 10:13:34,798 - INFO - HTTP Request: GET https://api.gradio.app/v3/tunnel-request "HTTP/1.1 200 OK"
+2025-12-22 10:14:46,953 - INFO - 成功从 d:\douyinmeituansync\cookie.txt 加载Cookie
+2025-12-22 10:14:54,401 - INFO - HTTP Request: GET https://api.gradio.app/pkg-version "HTTP/1.1 200 OK"
+2025-12-22 10:14:55,315 - INFO - HTTP Request: GET http://localhost:7860/gradio_api/startup-events "HTTP/1.1 200 OK"
+2025-12-22 10:14:57,360 - INFO - HTTP Request: HEAD http://localhost:7860/ "HTTP/1.1 200 OK"
+2025-12-22 10:14:59,253 - INFO - HTTP Request: GET https://api.gradio.app/v3/tunnel-request "HTTP/1.1 200 OK"

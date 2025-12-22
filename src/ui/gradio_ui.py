@@ -214,14 +214,20 @@ class AppLogic:
             data.append(row)
         return pd.DataFrame(data)
 
-    def sync_meituan(self, store_name, city, skip_price_update):
+    def sync_meituan(self, store_name, city, skip_price_update, custom_search_name):
         if not self.douyin_products:
-            log_func("请先查询抖音商品")
-            return None
+            log_func("提示: 当前抖音商品列表为空，将执行全量新建模式")
+            # 即使为空也允许继续，以便从美团同步并创建新商品
+        
+        # 确定搜索使用的名称
+        if custom_search_name and custom_search_name.strip():
+            search_target = custom_search_name.strip()
+            log_func(f"使用自定义美团搜索名称: {search_target}")
+        else:
+            search_target = process_store_name_for_meituan(store_name, log_func)
 
-        log_func(f"开始同步美团套餐: {city} - {store_name}")
-        cleaned_store_name = process_store_name_for_meituan(store_name, log_func)
-        mt_packages = get_meituan_packages(cleaned_store_name, city, log_func)
+        log_func(f"开始同步美团套餐: {city} - {search_target}")
+        mt_packages = get_meituan_packages(search_target, city, log_func)
         
         if not mt_packages:
             log_func("未获取到美团套餐")
@@ -306,7 +312,7 @@ class AppLogic:
         self.full_product_df = df
         return df
 
-    def execute_batch_update(self, df):
+    def execute_batch_update(self, df, manual_template_id):
         if df is None or df.empty:
             log_func("表格为空，无法操作")
             return
@@ -318,15 +324,22 @@ class AppLogic:
         fail_count = 0
         
         # 查找模板ID (用于重创)
-        template_id = None
-        for item in records:
-            if item['Product ID'] and item['操作模式'] == "修改":
-                template_id = item['Product ID']
-                break
+        # 优先级: 1. 手动输入的模板ID 2. 列表中"修改"项的ID 3. 当前门店现有的第一个商品ID
+        template_id = manual_template_id if manual_template_id and manual_template_id.strip() else None
+        
+        if not template_id:
+            for item in records:
+                if item['Product ID'] and item['操作模式'] == "修改":
+                    template_id = item['Product ID']
+                    break
+        
         if not template_id and self.douyin_products:
              template_id = self.douyin_products[0]['id']
+             
+        if not template_id:
+            log_func("[Warning] 未找到可用的模板商品ID！如果当前门店无商品，请在高级设置中手动输入一个模板ID，否则无法执行'重创'操作。")
 
-        log_func(f"开始批量操作 {len(records)} 条记录...")
+        log_func(f"开始批量操作 {len(records)} 条记录... (使用模板ID: {template_id})")
         
         for item in records:
             mode = item['操作模式']
@@ -384,6 +397,13 @@ def create_ui():
                 gr.Markdown("### 美团同步设置")
                 # 隐藏城市输入框，由程序自动处理
                 city_input = gr.Textbox(label="城市拼音", value="taiyuan", visible=False)
+                # 新增美团搜索名称输入框，允许用户修改
+                meituan_search_name_input = gr.Textbox(label="美团搜索名称 (可修改)", value="", placeholder="默认自动生成，可手动修改")
+                
+                # 新增：模板商品ID输入框，用于全量新建时
+                with gr.Accordion("高级设置：新建商品模板", open=False):
+                    template_id_input = gr.Textbox(label="模板商品ID (全量新建时必填)", value="", placeholder="若当前门店无商品，请填入任意一个已存在的商品ID作为模板")
+                
                 skip_price_chk = gr.Checkbox(label="仅新增/下架(跳过价格更新)", value=False)
                 sync_btn = gr.Button("2. 同步美团套餐", variant="primary")
                 
@@ -412,12 +432,14 @@ def create_ui():
 
         refresh_store_btn.click(refresh_stores, outputs=store_dropdown)
         
-        # 门店选择变化时，自动更新城市拼音
+        # 门店选择变化时，自动更新城市拼音 和 默认美团搜索名称
         def on_store_select(store_name):
             city_pinyin = logic.get_store_city_pinyin(store_name)
-            return city_pinyin
+            # 计算默认搜索名称 (不打印日志以免刷屏)
+            default_search_name = process_store_name_for_meituan(store_name, lambda x: None)
+            return city_pinyin, default_search_name
 
-        store_dropdown.change(on_store_select, inputs=store_dropdown, outputs=city_input)
+        store_dropdown.change(on_store_select, inputs=store_dropdown, outputs=[city_input, meituan_search_name_input])
 
         # 页面加载时自动获取门店 (需要 trick: 用 load 事件)
         def on_load():
@@ -438,7 +460,7 @@ def create_ui():
         # 同步美团
         sync_btn.click(
             fn=logic.sync_meituan,
-            inputs=[store_dropdown, city_input, skip_price_chk],
+            inputs=[store_dropdown, city_input, skip_price_chk, meituan_search_name_input],
             outputs=product_table
         )
 
@@ -452,7 +474,7 @@ def create_ui():
         # 执行操作
         execute_btn.click(
             fn=logic.execute_batch_update,
-            inputs=[product_table],
+            inputs=[product_table, template_id_input],
             outputs=None # Log output handled by timer
         )
 
