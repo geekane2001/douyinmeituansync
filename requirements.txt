@@ -21,3 +21,4 @@ gradio>=4.0.0
 
 # 工具库
 python-dateutil>=2.8.2
+pypinyin>=0.49.0

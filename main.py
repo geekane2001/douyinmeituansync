@@ -19,6 +19,7 @@ def main():
     ui.queue().launch(
         server_name="0.0.0.0",
         inbrowser=True,
+        share=True,
         show_error=True
     )
 

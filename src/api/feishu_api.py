@@ -39,7 +39,7 @@ def get_feishu_bitable_records(feishu_token, log_func):
                 FEISHU_BITABLE_RECORDS_SEARCH_URL,
                 headers=headers,
                 params=params,
-                json={"field_names": ["门店名称", "门店ID"]},
+                json={"field_names": ["门店名称", "门店ID", "所在城市"]},
                 timeout=15
             )
             response.raise_for_status()
@@ -54,8 +54,14 @@ def get_feishu_bitable_records(feishu_token, log_func):
                 fields = item.get("fields", {})
                 store_name = fields.get("门店名称", [{}])[0].get('text')
                 store_id = fields.get("门店ID", [{}])[0].get('text')
+                city = fields.get("所在城市", [{}])[0].get('text', '')
+                
                 if store_name and store_id:
-                    all_records[store_name] = store_id
+                    # 返回结构: {'门店名': {'id': 'xxx', 'city': 'xxx'}}
+                    all_records[store_name] = {
+                        'id': store_id,
+                        'city': city
+                    }
             
             page_token = data.get("data", {}).get("page_token")
             if not data.get("data", {}).get("has_more", False):

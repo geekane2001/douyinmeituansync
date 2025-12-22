@@ -6,6 +6,7 @@ import os
 import logging
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pypinyin import pinyin, Style
 
 from src.config import (
     DOUYIN_WEB_COOKIE, DOUYIN_WEB_CSRF_TOKEN,
@@ -58,7 +59,7 @@ def get_logs():
 class AppLogic:
     def __init__(self):
         self.douyin_access_token = None
-        self.store_data = {} # name -> id
+        self.store_data = {} # name -> {'id': 'xxx', 'city': 'xxx'}
         self.douyin_products = [] # List of dicts
         self.llm_cache = {}
         self.current_poi_id = None
@@ -90,12 +91,40 @@ class AppLogic:
             return []
         return sorted(list(self.store_data.keys()))
 
+    def get_store_city_pinyin(self, store_name):
+        """获取门店城市的拼音"""
+        if not store_name or store_name not in self.store_data:
+            return ""
+        
+        city_cn = self.store_data[store_name].get('city', '')
+        if not city_cn:
+            return ""
+        
+        # 去掉 "市"
+        city_cn = city_cn.replace("市", "")
+        
+        # 转拼音
+        try:
+            # pinyin 返回的是 list of list, e.g., [['wu'], ['xi']]
+            pinyin_list = pinyin(city_cn, style=Style.NORMAL)
+            city_pinyin = "".join([item[0] for item in pinyin_list])
+            log_func(f"城市自动识别: {city_cn} -> {city_pinyin}")
+            return city_pinyin
+        except Exception as e:
+            log_func(f"[Warning] 城市转拼音失败: {e}")
+            return ""
+
     def query_douyin_products(self, store_name, hide_live_only):
         if not store_name:
             log_func("请先选择门店")
             return []
         
-        poi_id = self.store_data.get(store_name)
+        store_info = self.store_data.get(store_name)
+        if not store_info:
+            log_func(f"未找到门店 {store_name} 的信息")
+            return []
+            
+        poi_id = store_info.get('id')
         if not poi_id:
             log_func(f"未找到门店 {store_name} 的 POI ID")
             return []
@@ -353,7 +382,8 @@ def create_ui():
                 query_btn = gr.Button("1. 查询抖音商品", variant="primary")
                 
                 gr.Markdown("### 美团同步设置")
-                city_input = gr.Textbox(label="城市拼音", value="taiyuan")
+                # 隐藏城市输入框，由程序自动处理
+                city_input = gr.Textbox(label="城市拼音", value="taiyuan", visible=False)
                 skip_price_chk = gr.Checkbox(label="仅新增/下架(跳过价格更新)", value=False)
                 sync_btn = gr.Button("2. 同步美团套餐", variant="primary")
                 
@@ -382,6 +412,13 @@ def create_ui():
 
         refresh_store_btn.click(refresh_stores, outputs=store_dropdown)
         
+        # 门店选择变化时，自动更新城市拼音
+        def on_store_select(store_name):
+            city_pinyin = logic.get_store_city_pinyin(store_name)
+            return city_pinyin
+
+        store_dropdown.change(on_store_select, inputs=store_dropdown, outputs=city_input)
+
         # 页面加载时自动获取门店 (需要 trick: 用 load 事件)
         def on_load():
             # 等待后台初始化完成 (简单的 sleep 不太好，但 demo 足够)
